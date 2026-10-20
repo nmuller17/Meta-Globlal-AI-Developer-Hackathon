@@ -1,0 +1,33 @@
+# Submission documents are shared privately
+docs/pdf/
+# Secrets
+.env
+.env.*
+!.env.example
+*.pem
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+
+# Local data
+*.db
+*.db.bak-*
+*.db-wal
+*.db-shm
+data/
+
+# Node
+node_modules/
+.next/
+
+# Keys and buyer-side state (shared/keys.py, shared/signing.py, buyer-agent ledger)
+keys/
+.publisher_signing_key
+.spend_ledger.jsonl
+.pinned_publishers.json
+
+# Submission PDFs are shared privately, never committed
+Doubloon_*.pdf
