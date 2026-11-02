@@ -1,4 +1,4 @@
-"""MCP connector that turns anyone's own AI assistant (Claude Desktop, Claude Code)
+"""MCP connector that turns anyone's own AI assistant (any MCP client)
 into a buyer agent for Doubloon publishers.
 
 The assistant is the brain: it searches, talks to the Sales agent and chooses

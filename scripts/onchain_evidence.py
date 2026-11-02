@@ -2,7 +2,7 @@
 
 Reads USDC Transfer logs (eth_getLogs) from our buyer wallets to the publisher wallets, so the list comes from
 the chain, not from our database. The context of a payment already in the file is kept; a new one is labelled
-from the demo database when it knows the sale (Claude connector or test agent), else "integration and demo runs".
+from the demo database when it knows the sale (MCP connector or test agent), else "integration and demo runs".
 
     .venv/bin/python scripts/onchain_evidence.py            # prints the new table
     .venv/bin/python scripts/onchain_evidence.py --write    # updates the doc in place
@@ -86,7 +86,7 @@ def demo_contexts():
     mcp = {r[0] for r in conn.execute("SELECT DISTINCT session_id FROM events WHERE payload_json LIKE '%\"source\": \"mcp\"%'")}
     for tx_hash, session in conn.execute(
             "SELECT t.tx_hash, o.session_id FROM transactions t JOIN offers o ON o.offer_id = t.offer_id WHERE t.status = 'settled'"):
-        out[(tx_hash or "").lower()] = "Claude connector (MCP), live demo gateway" if session in mcp else "Test agent, live demo gateway"
+        out[(tx_hash or "").lower()] = "MCP connector, live demo gateway" if session in mcp else "Test agent, live demo gateway"
     return out
 
 

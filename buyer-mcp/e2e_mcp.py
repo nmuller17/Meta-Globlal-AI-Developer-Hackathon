@@ -1,4 +1,4 @@
-"""End-to-end test of the buyer connector, driven over MCP stdio exactly like Claude Desktop does.
+"""End-to-end test of the buyer connector, driven over MCP stdio exactly like a desktop AI assistant does.
 
 Needs: the gateway running with the publisher activated, and a funded Base Sepolia buyer wallet in .env.
 Spends about 2.10 test USDC (one figure, then one full section after owner approval).
