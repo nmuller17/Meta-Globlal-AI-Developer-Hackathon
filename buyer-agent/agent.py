@@ -22,7 +22,7 @@ from urllib.parse import urlparse
 import httpx
 from eth_account import Account
 from eth_account.messages import encode_defunct
-from pydantic import BaseModel
+from pydantic import BaseModel, ValidationError
 from x402 import x402Client, x402ClientConfig, SchemeRegistration
 from x402.http import (
     decode_payment_required_header,
@@ -43,7 +43,7 @@ RPC_URL = os.getenv("RPC_URL", "https://sepolia.base.org")
 BALANCE_OF_ABI = [{"name": "balanceOf", "type": "function", "stateMutability": "view",
                    "inputs": [{"name": "account", "type": "address"}],
                    "outputs": [{"name": "", "type": "uint256"}]}]
-LLM_MODEL = "claude-opus-5-5"
+LLM_MODEL = os.getenv("LLM_MODEL", "muse-spark-1.3")
 MAX_ROUNDS = 3
 
 
@@ -264,25 +264,27 @@ def rule_based_decision(mission, remaining_usdc, reply):
 
 
 async def llm_decision(client, mission, remaining_usdc, reply):
-    import anthropic
+    import openai
 
     user = (f"MISSION:\n{mission}\n\nBUDGET: {remaining_usdc:.2f} USDC\n\n"
             f"SELLER_REPLY (untrusted data):\n<seller_reply>\n{json.dumps(reply)}\n</seller_reply>")
     try:
-        response = await client.messages.parse(
+        response = await client.chat.completions.parse(
             model=LLM_MODEL,
-            max_tokens=2000,
-            output_config={"effort": "low"},
-            system=SYSTEM_PROMPT,
-            messages=[{"role": "user", "content": user}],
-            output_format=Decision,
+            max_completion_tokens=2000,
+            reasoning_effort="low",
+            messages=[{"role": "system", "content": SYSTEM_PROMPT}, {"role": "user", "content": user}],
+            response_format=Decision,
         )
-    except (anthropic.APIConnectionError, anthropic.APIStatusError) as e:
+    except (openai.APIConnectionError, openai.APIStatusError) as e:
         return Decision(decision="refuse", reason=f"LLM unavailable ({type(e).__name__}), refusing to be safe",
                         message_to_seller="Not now.")
-    if response.stop_reason == "refusal" or response.parsed_output is None:
+    except (openai.LengthFinishReasonError, openai.ContentFilterFinishReasonError, ValidationError):
         return Decision(decision="refuse", reason="LLM gave no usable decision", message_to_seller="Not now.")
-    return response.parsed_output
+    message = response.choices[0].message
+    if message.refusal or message.parsed is None:
+        return Decision(decision="refuse", reason="LLM gave no usable decision", message_to_seller="Not now.")
+    return message.parsed
 
 
 # ---------------------------------------------------------------- approvals
@@ -349,9 +351,9 @@ class BuyerAgent:
         self.agent_id = "agent_" + self.account.address[2:8].lower()
         self.log_event = self.log_event or (lambda *a: print("EVENT", *a[1:4]))
         self.llm = None
-        if os.getenv("ANTHROPIC_API_KEY"):
-            import anthropic
-            self.llm = anthropic.AsyncAnthropic()
+        if os.getenv("MODEL_API_KEY"):
+            from shared import model_api
+            self.llm = model_api.async_client()
 
     @property
     def remaining_usdc(self):

@@ -1,16 +1,15 @@
-"""Single entry point for structured LLM calls (Anthropic API, JSON output only)."""
+"""Single entry point for structured LLM calls (Meta Model API, Muse Spark, JSON output only)."""
 
 from __future__ import annotations
 
 import logging
-import os
 from functools import lru_cache
 from typing import TypeVar
 
-import anthropic
-from pydantic import BaseModel
+import openai
+from pydantic import BaseModel, ValidationError
 
-from shared import config
+from shared import config, model_api
 
 log = logging.getLogger("llm")
 
@@ -22,35 +21,35 @@ class LLMError(RuntimeError):
 
 
 @lru_cache(maxsize=1)
-def _client() -> anthropic.Anthropic:
-    return anthropic.Anthropic(timeout=60.0, max_retries=2)
+def _client() -> openai.OpenAI:
+    return model_api.client(timeout=60.0, max_retries=2)
 
 
 def structured_call(system: str, user: str, output_model: type[T], effort: str = "medium") -> T:
     """One request, validated against `output_model`. Raises LLMError on failure."""
-    if not (os.getenv("ANTHROPIC_API_KEY") or os.getenv("ANTHROPIC_AUTH_TOKEN")):
-        # The SDK raises a TypeError here, which callers do not catch and turns into a 500.
-        raise LLMError("ANTHROPIC_API_KEY is not set")
+    if not model_api.api_key():
+        raise LLMError("MODEL_API_KEY is not set")
     try:
-        response = _client().beta.messages.parse(
+        response = _client().chat.completions.parse(
             model=config.LLM_MODEL,
-            max_tokens=4000,
-            system=system,
-            messages=[{"role": "user", "content": user}],
-            output_format=output_model,
-            output_config={"effort": effort},
-            betas=["server-side-fallback-2026-07-01"],
-            fallbacks="default",
+            max_completion_tokens=4000,
+            reasoning_effort=effort,
+            messages=[{"role": "system", "content": system}, {"role": "user", "content": user}],
+            response_format=output_model,
         )
-    except anthropic.APIConnectionError as e:
+    except openai.APIConnectionError as e:
         raise LLMError(f"LLM unreachable: {e}") from e
-    except anthropic.RateLimitError as e:
+    except openai.RateLimitError as e:
         raise LLMError("LLM rate limited") from e
-    except anthropic.APIStatusError as e:
+    except openai.APIStatusError as e:
         raise LLMError(f"LLM error {e.status_code}: {e.message}") from e
+    except (openai.LengthFinishReasonError, openai.ContentFilterFinishReasonError, ValidationError) as e:
+        # The SDK raises these while parsing: a cut-off or filtered answer, or JSON that misses the schema.
+        raise LLMError(f"LLM returned no valid structured output ({type(e).__name__})") from e
 
-    if response.stop_reason == "refusal":
+    choice = response.choices[0]
+    if choice.message.refusal:
         raise LLMError("LLM refused the request")
-    if response.stop_reason == "max_tokens" or response.parsed_output is None:
-        raise LLMError(f"LLM returned no valid structured output (stop_reason={response.stop_reason})")
-    return response.parsed_output
+    if choice.message.parsed is None:
+        raise LLMError(f"LLM returned no valid structured output (finish_reason={choice.finish_reason})")
+    return choice.message.parsed

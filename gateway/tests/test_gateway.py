@@ -215,8 +215,7 @@ def test_accepted_offer_in_payment_window_holds_a_slot(client, monkeypatch):
 
 
 def test_missing_api_key_uses_fallbacks_instead_of_500(client, monkeypatch):
-    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
-    monkeypatch.delenv("ANTHROPIC_AUTH_TOKEN", raising=False)
+    monkeypatch.delenv("MODEL_API_KEY", raising=False)
     res = client.put("/publisher/rules", json={"raw_text": DEMO_RULES})
     assert res.status_code == 200
     acct = Account.create()

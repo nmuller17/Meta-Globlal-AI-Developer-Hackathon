@@ -25,7 +25,7 @@ from ingestion.compat import log_event
 from ingestion.crawl import crawl
 from ingestion.leak_filter import NUMBER, _interpretations, _is_trivial, build_index, find_paid_figures
 
-MODEL = os.environ.get("INGESTION_MODEL", "claude-opus-5-5")
+MODEL = os.environ.get("INGESTION_MODEL", "muse-spark-1.3")
 LLM_WORKERS = 8
 TIERS = ("single_fact", "small_table", "full_section")
 
@@ -89,8 +89,10 @@ class MetadataWriter:
         self.errors = []
         if not self.disabled:
             try:
-                import anthropic
-                self.client = anthropic.Anthropic()
+                from shared import model_api
+                if not model_api.api_key():
+                    raise RuntimeError("MODEL_API_KEY is not set")
+                self.client = model_api.client()
             except Exception as err:
                 self.disabled = True
                 self.errors.append(f"client: {err}")
@@ -99,31 +101,31 @@ class MetadataWriter:
         """SectionMetadata from the LLM, or None to use the fallback."""
         if self.disabled:
             return None
-        import anthropic
+        import openai
         prompt = (
             f"<document url=\"{url}\">\n<document_title>{doc_title}</document_title>\n"
             f"<section_title>{section}</section_title>\n<text>\n{text}\n</text>\n</document>\n\n"
             "Write the catalog metadata for this section."
         )
         try:
-            response = self.client.messages.parse(
+            response = self.client.chat.completions.parse(
                 model=MODEL,
-                max_tokens=4000,
-                system=SYSTEM_PROMPT,
-                output_config={"effort": "low"},
-                messages=[{"role": "user", "content": prompt}],
-                output_format=SectionMetadata,
+                max_completion_tokens=4000,
+                reasoning_effort="low",
+                messages=[{"role": "system", "content": SYSTEM_PROMPT}, {"role": "user", "content": prompt}],
+                response_format=SectionMetadata,
             )
-        except (anthropic.AuthenticationError, anthropic.PermissionDeniedError) as err:
+        except (openai.AuthenticationError, openai.PermissionDeniedError) as err:
             self.disabled = True
             self.errors.append(f"auth: {err}")
             return None
         except Exception as err:
             self.errors.append(f"{section}: {str(err)[:200]}")
             return None
-        if response.stop_reason == "refusal":
+        message = response.choices[0].message
+        if message.refusal:
             return None
-        return response.parsed_output
+        return message.parsed
 
 
 # ---------- deterministic fallback ----------

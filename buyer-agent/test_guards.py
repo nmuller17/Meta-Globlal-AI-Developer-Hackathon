@@ -69,6 +69,34 @@ def test_rule_based_refuses_offer_above_budget():
     assert agent.rule_based_decision("m", 1.0, reply).decision == "refuse"
 
 
+def _llm_decision(status=200, content=None):
+    """llm_decision through the real OpenAI SDK, against a fake Meta Model API."""
+    import asyncio
+    import httpx
+    from shared import model_api
+
+    def handler(request):
+        if status != 200:
+            return httpx.Response(status, json={"error": {"message": "fake error"}})
+        return httpx.Response(200, json={"id": "chatcmpl-test", "object": "chat.completion", "created": 0,
+                                         "model": agent.LLM_MODEL, "choices": [{"index": 0, "finish_reason": "stop",
+                                         "message": {"role": "assistant", "content": content}}]})
+
+    client = model_api.async_client(max_retries=0, http_client=httpx.AsyncClient(transport=httpx.MockTransport(handler)))
+    reply = {"action": "propose_offer", "offer": {"price_usdc": 0.10}}
+    return asyncio.run(agent.llm_decision(client, "m", 5.0, reply))
+
+
+def test_llm_decision_parses_the_model_answer():
+    content = '{"decision": "accept", "reason": "fits", "message_to_seller": "Accepted."}'
+    assert _llm_decision(content=content).decision == "accept"
+
+
+@pytest.mark.parametrize("answer", [{"status": 503}, {"content": "not json"}, {"content": '{"decision": "pay more"}'}])
+def test_llm_decision_refuses_when_the_model_fails(answer):
+    assert _llm_decision(**answer).decision == "refuse"
+
+
 async def _approval_flow():
     import asyncio
     approvals = agent.Approvals()

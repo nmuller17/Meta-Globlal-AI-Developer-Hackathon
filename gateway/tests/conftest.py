@@ -14,7 +14,7 @@ BLOCKED = Account.create()
 os.environ["JWT_SECRET"] = "test-secret-not-for-production-use-0123456789"
 os.environ["KYA_BLOCKLIST"] = BLOCKED.address
 os.environ["DEMO_SITE_URL"] = "https://demo-site.example"
-os.environ["ANTHROPIC_API_KEY"] = "test-key"
+os.environ["MODEL_API_KEY"] = "test-key"
 
 
 @pytest.fixture(autouse=True)

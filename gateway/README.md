@@ -7,7 +7,7 @@ One FastAPI app for every role. P2 owns discovery, KYA, the Sales agent, offers,
 ```bash
 py -3.12 -m venv .venv
 .venv/Scripts/python -m pip install -r requirements.txt   # macOS/Linux: .venv/bin/python
-cp .env.example .env    # then set JWT_SECRET and ANTHROPIC_API_KEY
+cp .env.example .env    # then set JWT_SECRET and MODEL_API_KEY
 .venv/Scripts/python -m uvicorn gateway.main:app --reload --port 8000
 ```
 

@@ -12,7 +12,7 @@ python -m ingestion.dev_server --port 8010 # P1 endpoints alone, until the gatew
 python -m pytest ingestion/tests -q
 ```
 
-`INGESTION_LLM=off` skips the LLM and uses heuristic metadata. `INGESTION_MODEL` overrides the model (default `claude-opus-5-5`).
+`INGESTION_LLM=off` skips the LLM and uses heuristic metadata. `INGESTION_MODEL` overrides the model (default `muse-spark-1.3`, on the Meta Model API with `MODEL_API_KEY`).
 `python -m ingestion.dev_server --mock` loads the hand-written catalog (`ingestion/mock_catalog.json`) without a scan.
 
 ## For P2 (gateway, Sales agent)

@@ -43,9 +43,9 @@ def main():
     args = parser.parse_args()
 
     print("== config")
-    for var in ["JWT_SECRET", "ANTHROPIC_API_KEY", "PUBLISHER_WALLET_ADDRESS", "BUYER_PRIVATE_KEY_1"]:
+    for var in ["JWT_SECRET", "MODEL_API_KEY", "PUBLISHER_WALLET_ADDRESS", "BUYER_PRIVATE_KEY_1"]:
         present = os.getenv(var) or os.getenv(f"{var}_KEYSTORE")
-        report("OK" if present else ("WARN" if var == "ANTHROPIC_API_KEY" else "FAIL"),
+        report("OK" if present else ("WARN" if var == "MODEL_API_KEY" else "FAIL"),
                f"{var} set", ("encrypted keystore" if not os.getenv(var) else "") if present else "missing in .env")
     if os.getenv("BUYER_PRIVATE_KEY_1"):
         report("WARN", "buyer keys in plaintext", "run scripts/encrypt_keys.py to move them to keystores + Keychain")
@@ -120,7 +120,7 @@ def main():
                 continue
             address = Account.from_key(key).address
             balance = usdc.functions.balanceOf(address).call() / 1_000_000
-            demo_wallet = i == int(os.getenv("MCP_BUYER_WALLET", "1"))  # the wallet the Claude connector spends
+            demo_wallet = i == int(os.getenv("MCP_BUYER_WALLET", "1"))  # the wallet the MCP connector spends
             level = "OK" if balance >= DEMO_NEEDS_USDC else ("FAIL" if demo_wallet else "WARN")
             report(level, f"buyer {i} {address}" + (" (connector)" if demo_wallet else ""), f"{balance:.2f} USDC, demo needs {DEMO_NEEDS_USDC:.2f}"
                    + ("" if level == "OK" else (", send USDC on the Base network to this address" if NETWORK == "eip155:8453"
