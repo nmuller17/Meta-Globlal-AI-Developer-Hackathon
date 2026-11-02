@@ -9,6 +9,8 @@ Meta Global AI Developer Hackathon 2026 · Startup track · Theme: Build for You
 
 AI agents are the web's fastest-growing audience: about 1.7% of web activity in 2026, a quarter of web traffic expected by 2035 (DataDome, June 2026; Cisco, 2026). They read pages without seeing ads or paying, so websites earn almost nothing from them, and blocking agents is their only safe default. On the other side, an agent that needs one precise figure can only scrape public pages, or buy a whole report built for humans, which it cannot do on its own.
 
+**We know both sides firsthand.** Before MIT, we worked in strategy consulting and M&A / private equity (BCG). We often needed one number the same day, a market share, a growth rate, a competitor figure, and the only way to get it was a €3,000 report or a yearly subscription. That research is now done more and more by AI agents, and agents cannot pay for a single fact: no credit card, no checkout page, no account. We saw the other side with one of our own websites: traffic and ad revenue kept falling as people asked AI assistants instead. The content was still read, by machines, but nobody paid for it.
+
 Doubloon makes every website **payable for all AI agent readers**. A content owner pastes its URL, and in about 60 seconds its content becomes data that any AI agent can discover, negotiate for and buy, with no code. For publishers, it is a **new revenue stream** from an audience that never sees an ad. For buyers, it is **access to information without buying the whole report**: one figure for 0.10 USDC, a small table for 0.50, a full section for 2.00, while the rest of the report stays protected.
 
 **Meta's Muse Spark does the language work.** It writes the catalog that agents browse, turns prices written in plain words into a price table, negotiates with buyer agents as the publisher's sales agent, and decides for our buyer agent whether an offer fits its mission. Code then checks every one of its answers: **a language model may propose, but only code decides price, permission and money.**
@@ -17,6 +19,7 @@ Every sale runs on **x402**, the open protocol that finally puts HTTP's `402 Pay
 
 | At a glance | |
 | --- | --- |
+| Demo video | [3-minute demo on YouTube](https://www.youtube.com/watch?v=svdWuwi0hfs) |
 | Meta model | Muse Spark (`muse-spark-1.3`) on the Meta Model API, in four roles: [how Doubloon uses it](#how-doubloon-uses-muse-spark) |
 | Proof | 64 payments settled on-chain, 2 of them on Base mainnet with real USDC: [on-chain evidence](payments/docs/ONCHAIN_EVIDENCE.md) |
 | Demo publisher | [velstrand-research.vercel.app](https://velstrand-research.vercel.app), a fictional research firm |
@@ -323,6 +326,7 @@ Their real transactions are listed in [payments/docs/ONCHAIN_EVIDENCE.md](paymen
 | Web app | Next.js, React, Tailwind, wagmi and viem (MetaMask), Server-Sent Events |
 | Hosting | Vercel (publisher site) |
 
+---
 
 ## Limits and roadmap
 
